@@ -120,7 +120,7 @@ def send_device_info(endpoint):
 
     # Save device config (pretty JSON)
     try:
-        with open("/home/metro/device_config.json", "w") as f:
+        with open("/home/ubuntu/device_config.json", "w") as f:
             json.dump(device_data, f, indent=2)
         print("[INFO] Device configuration saved!")
     except Exception as e:
@@ -135,7 +135,7 @@ def send_device_info(endpoint):
 
             # Save raw server response
             try:
-                with open("/home/metro/facility_config.json", "w") as f:
+                with open("/home/ubuntu/facility_config.json", "w") as f:
                     f.write(response.text)
                 print("[INFO] Facility configuration saved!")
             except Exception as e:
@@ -148,4 +148,4 @@ def send_device_info(endpoint):
         print(f"[EXCEPTION] {e}")
 
 if __name__ == "__main__":
-    send_device_info("https://visionanalytics.prod.squirrelvision.ai/api/register-edgedevice")
+    send_device_info("http://10.3.158.111:3000/api/register-edgedevice")
