@@ -4,10 +4,10 @@ import os
 import requests
 
 # Accessing Facility Configuration
-CONFIG_FILE = "/home/metro/facility_config.json"
+CONFIG_FILE = "/home/ubuntu/facility_config.json"
 
 # Sending data to backend
-BASE_URL = "https://visionanalytics.prod.squirrelvision.ai/api/devices" 
+BASE_URL = "http://10.3.158.111:3000/api/devices" 
 
 def load_config(file_path):
     if not os.path.exists(file_path):
