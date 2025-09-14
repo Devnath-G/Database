@@ -1,5 +1,5 @@
 gst-launch-1.0 -v \
-rtspsrc location="rtsp://oosto:Adani%40123@10.3.158.45:654/00000001-0000-babe-0000-000075f93efef/live" latency=200 protocols=tcp ! \
+rtspsrc location="rtsp://oosto:Adani%40123@10.3.158.45:654/00000001-0000-babe-0000-000075f93efef/live" latency=200 ! \
 rtph264depay ! h264parse ! avdec_h264 ! \
 videoconvert ! videoscale ! video/x-raw,width=640,height=640,format=NV12 ! \
 gvadetect model=/home/metro/models/person-vehicle-bike-detection/person-vehicle-bike-detection-2004.xml \
