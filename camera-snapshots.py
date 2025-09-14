@@ -6,7 +6,7 @@ import json
 import os
 
 # === Load facility ID from config ===
-CONFIG_PATH = "/home/ubuntu/facility_config.json"
+CONFIG_PATH = "/home/metro/facility_config.json"
 
 if not os.path.exists(CONFIG_PATH):
     print(f"[ERROR] Configuration file not found at {CONFIG_PATH}")
