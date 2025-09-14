@@ -15,7 +15,7 @@ import urllib.request
 from concurrent.futures import ThreadPoolExecutor
 import queue
 
-CONFIG_FILE = "/home/ubuntu/facility_config.json"
+CONFIG_FILE = "/home/metro/facility_config.json"
 WS_BASE_URL = "wss://10.3.158.111:3001/diagnostics"
 ONVIF_PORT = 80
 
