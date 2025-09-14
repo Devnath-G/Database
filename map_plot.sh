@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # ============================
-# DL Streamer Facility Pipeline (Homographic Map Plotting)
+# DL Streamer Facility Pipeline (Lightweight, No Encoding, No Compositor)
 # ============================
 
 # Use Case
@@ -57,53 +57,39 @@ fi
 echo "[INFO] Using facilityId=$FACILITY_ID"
 echo "[INFO] Found ${#RTSP_STREAMS[@]} RTSP stream(s) for use case \"$USE_CASE\"."
 
-# Video dimensions
+# Video dimensions for detection
 PROCESS_WIDTH=640
 PROCESS_HEIGHT=640
-DISPLAY_WIDTH=640
-DISPLAY_HEIGHT=640
-
-# Compositor layout
-COMPOSITOR_POS=""
-for i in "${!RTSP_STREAMS[@]}"; do
-    xpos=$((i * DISPLAY_WIDTH))
-    COMPOSITOR_POS+=" sink_$i::xpos=$xpos sink_$i::ypos=0"
-done
 
 # Use CPU for gvadetect
 DEVICE="CPU"
 
-# Start building pipeline
-PIPELINE="gst-launch-1.0 -e \
-compositor name=mix background=black latency=40 $COMPOSITOR_POS ! \
-videoconvert ! videoscale ! video/x-raw,width=$((DISPLAY_WIDTH * ${#RTSP_STREAMS[@]})),height=$DISPLAY_HEIGHT,format=NV12 ! \
-videoconvert ! \
-x264enc bitrate=6000 speed-preset=ultrafast tune=zerolatency ! \
-h264parse ! \
-rtph264pay config-interval=1 pt=96 ! \
-udpsink host=172.16.1.169 port=5000 sync=false"
+# ----------------------------
+# Build lightweight pipeline per stream
+# ----------------------------
+PIPELINE_BASE="rtspsrc latency=100 protocols=tcp"
 
-# Add each RTSP stream branch (CPU only)
-for i in "${!RTSP_STREAMS[@]}"; do
-    PIPELINE+=" \
+# Watchdog wrapper
+while true; do
+    echo "[INFO] Starting lightweight detection pipeline..."
+    
+    # Build pipelines for each stream
+    for i in "${!RTSP_STREAMS[@]}"; do
+        STREAM_PIPELINE="\
 rtspsrc location=${RTSP_STREAMS[$i]} latency=100 protocols=tcp ! \
-rtph264depay ! h264parse ! avdec_h264 ! \
+rtph264depay ! avdec_h264 ! \
 queue max-size-buffers=0 max-size-time=100000000 leaky=downstream ! \
 videoconvert ! videoscale ! video/x-raw,width=$PROCESS_WIDTH,height=$PROCESS_HEIGHT,format=NV12 ! \
 gvadetect model=$MODEL_XML model_proc=$MODEL_PROC device=$DEVICE threshold=0.2 nireq=4 batch-size=1 model-instance-id=live pre-process-backend=opencv ! \
 gvatrack tracking-type=zero-term-imageless ! \
-gvapython module=/home/metro/metadata.py class=WebSocketDetector ! \
-gvawatermark ! tee name=t$i ! \
-queue ! \
-videoconvert ! videoscale ! video/x-raw,format=NV12,width=$DISPLAY_WIDTH,height=$DISPLAY_HEIGHT ! \
-mix.sink_$i"
-done
+gvapython module=/home/metro/metadata.py class=WebSocketDetector"
 
-# Watchdog wrapper
-while true; do
-    echo "[INFO] Starting pipeline with ${#RTSP_STREAMS[@]} stream(s) for use case \"$USE_CASE\"..."
-    eval "$PIPELINE"
-    EXIT_CODE=$?
-    echo "[WARN] Pipeline stopped (exit code $EXIT_CODE). Restarting in 5 seconds..."
+        # Run each stream in background
+        gst-launch-1.0 -e $STREAM_PIPELINE &
+    done
+
+    # Wait for all pipelines to exit
+    wait
+    echo "[WARN] One or more pipelines stopped. Restarting in 5 seconds..."
     sleep 5
 done
