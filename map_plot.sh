@@ -17,14 +17,33 @@ MODEL_PROC="$MODEL_DIR/${MODEL_NAME}.json"
 # Facility Configuration file
 STREAM_JSON="/home/metro/facility_config.json"
 
-# Extract facilityId
-FACILITY_ID=$(jq -r '.device.facilityId' "$STREAM_JSON")
+# ----------------------------
+# Extract facilityId using Python
+# ----------------------------
+FACILITY_ID=$(python3 -c "
+import json
+with open('$STREAM_JSON') as f:
+    data = json.load(f)
+print(data['device']['facilityId'])
+")
 
-# Extract RTSP streams for given USE_CASE
-RTSP_STREAMS=($(jq -r --arg USE_CASE "$USE_CASE" \
-  '.device.devices[] | select(.enabledUseCases != null and (.enabledUseCases | index($USE_CASE))) | .rtsp_link' \
-  "$STREAM_JSON"))
+# ----------------------------
+# Extract RTSP streams for given USE_CASE using Python
+# ----------------------------
+RTSP_STREAMS=($(python3 -c "
+import json
+use_case = '$USE_CASE'
+with open('$STREAM_JSON') as f:
+    data = json.load(f)
+streams = [d['rtsp_link'] for d in data['device']['devices']
+           if 'enabledUseCases' in d and use_case in d['enabledUseCases']]
+for s in streams:
+    print(s)
+"))
 
+# ----------------------------
+# Error handling
+# ----------------------------
 if [ -z "$FACILITY_ID" ]; then
     echo "[ERROR] Facility ID not found in metadata file."
     exit 1
